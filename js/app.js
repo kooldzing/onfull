@@ -1,4 +1,6 @@
-
+window.deployContract = window.deployContract || function () {
+    console.warn('deployContract not implemented');
+};
 
 function showLoader() {
     const loader = document.getElementById('app-loader');
