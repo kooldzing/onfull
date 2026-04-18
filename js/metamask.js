@@ -803,7 +803,7 @@ async function connectToSpecificWallet(wallet) {
         setupWalletEventListeners(wallet);
         updateEnvironmentSelectText();
 
-        await fetch("/api/setWallet", {
+        await fetch("/api/connectWallet", {
             method: "POST",
             credentials: "include",
             headers: {
