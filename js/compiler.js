@@ -14,14 +14,8 @@ const CACHE_DURATION = 30000;
 const UNIT_DECIMALS = { wei: 0, gwei: 9, ether: 18 };
 
 const PUBLIC_RPC_URLS = {
-    '1': [
-        'https://eth.llamarpc.com',
-        'https://rpc.ankr.com/eth',
-        'https://ethereum.publicnode.com'
-    ],
-    '11155111': [
-        'https://rpc.sepolia.org'
-    ]
+    '1': 'https://eth.llamarpc.com',
+    '11155111': 'https://rpc.sepolia.org'
 };
 
 // ===============================
