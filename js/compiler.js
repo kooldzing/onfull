@@ -144,9 +144,16 @@ async function loadContractTemplate() {
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-        const res = await fetch('/api/contract.sol', {
-            signal: controller.signal
-        });
+        const res = await fetch('/api/compile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            code: sourceCode
+        }),
+        signal: controller.signal
+    });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
