@@ -9,17 +9,7 @@ const UNIT_DECIMALS = { wei: 0, gwei: 9, ether: 18 };
 
 const PUBLIC_RPC_URLS = {
     '1': 'https://eth.llamarpc.com',
-    '11155111': 'https://rpc.sepolia.org',
-    '5': 'https://rpc.ankr.com/eth_goerli',
-    '137': 'https://polygon-rpc.com',
-    '80001': 'https://rpc-mumbai.maticvigil.com',
-    '56': 'https://bsc-dataseed.binance.org',
-    '97': 'https://data-seed-prebsc-1-s1.binance.org:8545',
-    '43114': 'https://api.avax.network/ext/bc/C/rpc',
-    '43113': 'https://api.avax-test.network/ext/bc/C/rpc',
-    '250': 'https://rpc.ftm.tools',
-    '42161': 'https://arb1.arbitrum.io/rpc',
-    '10': 'https://mainnet.optimism.io'
+    '11155111': 'https://rpc.sepolia.org'
 };
 
 function getPublicRpcUrl(chainId) {
