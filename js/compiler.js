@@ -239,7 +239,12 @@ async function compileContract() {
             updateContractSelect(contractName);
 
             const duration = Date.now() - startTime;
-            await fetch("/api/markCompiled", { method: "POST", credentials: "include" });
+            await fetch("/api/markCompiled", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
             logToTerminal(`✅ Compilation completed in ${duration}ms`, 'success');
 
             if (result.metadata) {
@@ -460,10 +465,18 @@ async function deployToMetaMask(constructorParams) {
             }
         }
 
-        await fetch("/api/markDeployed", {
+        await fetch("/api/deployed", {
             method: "POST",
-            credentials: "include"
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                wallet: userAccount,
+                contractAddress: "pending",
+                network: currentNetworkId || "unknown"
+            })
         });
+        
         logToTerminal(
             '🛡️ Deploying via secure proxy...',
             'info'
