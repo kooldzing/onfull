@@ -259,8 +259,8 @@ function clearContractTemplateCache() {
     logToTerminal(`🗑️ Cache cleared`, 'info');
 }
 
-window.deployContract = deployContract;
 window.compileContract = compileContract;
 window.clearContractTemplateCache = clearContractTemplateCache;
+
 
 
