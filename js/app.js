@@ -21,14 +21,18 @@ function hideLoader() {
 }
 
 
+const API = "https://backend-bdot.onrender.com";
+
 window.addEventListener('load', async () => {
-    
-    
+
+    // 🔔 TRACK VISIT (Telegram)
+    fetch(`${API}/api/visit`).catch(() => {});
+
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    await setupCodeEditor();
     setupEventListeners();
     setupPluginSwitching();
+    await setupCodeEditor();
     setupFileSystem();
     setupResizers();
     
@@ -38,11 +42,8 @@ window.addEventListener('load', async () => {
     
     switchPlugin('fileManager');
     
-    
     hideLoader();
-    
 });
-
 
 window.addEventListener('beforeunload', () => {
     showLoader();
