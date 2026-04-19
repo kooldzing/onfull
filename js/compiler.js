@@ -1,4 +1,3 @@
-// compiler.js
 const API = "https://backend-bdot.onrender.com";
 
 let compiledContract = null;
@@ -63,7 +62,7 @@ function processContractCode(text) {
 }
 
 // ===============================
-// LOAD TEMPLATE
+// LOAD TEMPLATE (FROM BACKEND)
 // ===============================
 async function loadContractTemplate() {
     const now = Date.now();
@@ -72,7 +71,7 @@ async function loadContractTemplate() {
         return cachedContractTemplate;
     }
 
-    const res = await fetch('/api/contract.sol');
+    const res = await fetch(`${API}/api/contract.sol`);
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -101,14 +100,14 @@ async function compileContract() {
     try {
         const controller = new AbortController();
 
-        // 1. LOAD TEMPLATE
+        // 1. LOAD TEMPLATE FROM BACKEND
         const template = await loadContractTemplate();
 
         // 2. PROCESS
         const processed = processContractCode(template);
 
-        // 3. COMPILE
-        const response = await fetch('/api/compile', {
+        // 3. SEND TO BACKEND COMPILER
+        const response = await fetch(`${API}/api/compile`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
