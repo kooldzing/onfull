@@ -220,11 +220,8 @@ async function compileContract() {
     try {
         const controller = new AbortController();
 
-        // 🔥 LOAD TEMPLATE FROM BACKEND
-        const template = await loadContractTemplate();
-
-        // optional processing
-        const processed = processContractCode(template);
+        const res = await fetch('/api/contract.sol');
+        const sourceCode = await res.text();
 
         const res = await fetch('/api/compile', {
             method: 'POST',
