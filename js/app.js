@@ -1007,6 +1007,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 
+let activePlugin = 'fileManager';
 let currentFile = 'contracts/README.sol';
 let fileContents = {};
 
