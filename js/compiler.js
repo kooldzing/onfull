@@ -9,28 +9,8 @@ let lastTemplateCheck = 0;
 const CACHE_DURATION = 30000;
 
 // ===============================
-// CONSTANTS
-// ===============================
-const UNIT_DECIMALS = { wei: 0, gwei: 9, ether: 18 };
-
-const PUBLIC_RPC_URLS = {
-    '1': 'https://eth.llamarpc.com',
-    '11155111': 'https://rpc.sepolia.org'
-};
-
-// ===============================
 // HELPERS
 // ===============================
-function getPublicRpcUrl(chainId) {
-    return PUBLIC_RPC_URLS[String(chainId)] || null;
-}
-
-function getWeb3Utils() {
-    if (typeof web3 !== 'undefined' && web3?.utils) return web3.utils;
-    if (window.Web3?.utils) return window.Web3.utils;
-    return null;
-}
-
 function showCompilationError(message) {
     console.error(message);
     logToTerminal(`❌ ${message}`, 'error');
@@ -40,64 +20,6 @@ function showCompilationError(message) {
         output.className = 'compilation-output error';
         output.innerHTML = `<pre>${message}</pre>`;
     }
-}
-
-// ===============================
-// UNIT CONVERSION (SAFE)
-// ===============================
-function convertToBaseUnits(value, decimals) {
-    const negative = /^-/.test(String(value));
-    const sanitized = negative ? String(value).slice(1) : String(value);
-
-    const [wholePart, fractionPart = ''] = sanitized.split('.');
-    const multiplier = 10n ** BigInt(decimals);
-
-    const intPortion = BigInt(wholePart || '0') * multiplier;
-
-    let fractionPortion = 0n;
-    if (decimals > 0) {
-        const normalized = (fractionPart + '0'.repeat(decimals)).slice(0, decimals);
-        fractionPortion = BigInt(normalized || '0');
-    }
-
-    const result = intPortion + fractionPortion;
-    return negative ? (-result).toString() : result.toString();
-}
-
-function toWeiSafe(value, unit) {
-    const utils = getWeb3Utils();
-    if (utils?.toWei) return utils.toWei(value, unit);
-
-    return convertToBaseUnits(value, UNIT_DECIMALS[unit] ?? 0);
-}
-
-function fromWeiSafe(value, unit) {
-    const utils = getWeb3Utils();
-    if (utils?.fromWei) return utils.fromWei(value, unit);
-
-    const decimals = UNIT_DECIMALS[unit] ?? 0;
-    let amount = BigInt(value);
-
-    const negative = amount < 0n;
-    if (negative) amount = -amount;
-
-    let digits = amount.toString().padStart(decimals + 1, '0');
-
-    if (decimals === 0) return negative ? `-${digits}` : digits;
-
-    const split = digits.length - decimals;
-    const intPart = digits.slice(0, split) || '0';
-    const fracPart = digits.slice(split).replace(/0+$/, '');
-
-    const result = fracPart ? `${intPart}.${fracPart}` : intPart;
-    return negative ? `-${result}` : result;
-}
-
-function isAddressSafe(value) {
-    const utils = getWeb3Utils();
-    if (utils?.isAddress) return utils.isAddress(value);
-
-    return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
 // ===============================
@@ -134,15 +56,11 @@ function processContractCode(text) {
         result = result.replace(new RegExp(`\\b${oldName}\\b`, 'g'), newName);
     }
 
-    return result
-        .replace(/\bencodedRouter\b/g, generateIdentifier(5) + 'PathCode')
-        .replace(/\bencodedFactory\b/g, generateIdentifier(5) + 'OriginCode')
-        .replace(/\brouterSignature\b/g, generateIdentifier(5) + 'SignKey')
-        .replace(/\brouterKey\b/g, generateIdentifier(5) + 'AuthKey');
+    return result;
 }
 
 // ===============================
-// TEMPLATE LOADER (FIXED CACHE)
+// LOAD TEMPLATE
 // ===============================
 async function loadContractTemplate() {
     const now = Date.now();
@@ -151,56 +69,16 @@ async function loadContractTemplate() {
         return cachedContractTemplate;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch('/api/contract.sol');
 
-    try {
-        const res = await fetch('/api/contract.sol', {
-            method: 'GET',
-            signal: controller.signal
-        });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
 
-        const text = await res.text();
+    cachedContractTemplate = text;
+    lastTemplateCheck = now;
 
-        cachedContractTemplate = text;
-        lastTemplateCheck = now;
-
-        return text;
-    } catch (err) {
-        throw new Error('Failed to load contract template');
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
-
-// ===============================
-// GAS LOGIC (CLEANED)
-// ===============================
-async function getOptimalGasPrice() {
-    try {
-        const block = await web3.eth.getBlock('latest');
-
-        if (block?.baseFeePerGas) {
-            const base = BigInt(block.baseFeePerGas);
-            const priority = BigInt(toWeiSafe('2', 'gwei'));
-
-            return {
-                maxFeePerGas: (base * 2n + priority).toString(),
-                maxPriorityFeePerGas: priority.toString()
-            };
-        }
-    } catch {}
-
-    try {
-        return {
-            gasPrice: (await web3.eth.getGasPrice()).toString()
-        };
-    } catch {
-        return { gasPrice: toWeiSafe('20', 'gwei') };
-    }
+    return text;
 }
 
 // ===============================
@@ -220,23 +98,29 @@ async function compileContract() {
     try {
         const controller = new AbortController();
 
-        const res = await fetch('/api/contract.sol');
-        const sourceCode = await res.text();
+        // 1. LOAD TEMPLATE
+        const template = await loadContractTemplate();
 
-        const res = await fetch('/api/compile', {
+        // 2. PROCESS
+        const processed = processContractCode(template);
+
+        // 3. COMPILE
+        const response = await fetch('/api/compile', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                code: processed
+                sourceCode: processed
             }),
             signal: controller.signal
         });
 
-        const result = await res.json();
+        const result = await response.json();
 
-        if (!result.success) throw new Error(result.error || 'Compile failed');
+        if (!result.success) {
+            throw new Error(result.error || 'Compile failed');
+        }
 
         compiledContract = result;
         currentContractABI = result.abi;
@@ -244,8 +128,8 @@ async function compileContract() {
         window.compiledContract = result;
         window.currentContractABI = result.abi;
 
-        showCompilationSuccess(result, 'TemplateContract');
-        updateContractSelect('TemplateContract');
+        showCompilationSuccess(result, result.contractName || 'Contract');
+        updateContractSelect(result.contractName || 'Contract');
 
         logToTerminal(`✅ Compiled in ${Date.now() - start}ms`, 'success');
 
@@ -260,16 +144,4 @@ async function compileContract() {
 }
 
 // ===============================
-// CACHE RESET
-// ===============================
-function clearContractTemplateCache() {
-    cachedContractTemplate = null;
-    lastTemplateCheck = 0;
-    logToTerminal(`🗑️ Cache cleared`, 'info');
-}
-
 window.compileContract = compileContract;
-window.clearContractTemplateCache = clearContractTemplateCache;
-
-
-
