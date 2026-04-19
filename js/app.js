@@ -26,9 +26,9 @@ window.addEventListener('load', async () => {
     
     await new Promise(resolve => setTimeout(resolve, 2000));
 
+    await setupCodeEditor();
     setupEventListeners();
     setupPluginSwitching();
-    await setupCodeEditor();
     setupFileSystem();
     setupResizers();
     
@@ -1006,7 +1006,7 @@ window.addEventListener('beforeunload', () => {
     showLoader();
 });
 
-let activePlugin = 'fileManager';
+
 let currentFile = 'contracts/README.sol';
 let fileContents = {};
 
