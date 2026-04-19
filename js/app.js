@@ -25,10 +25,10 @@ window.addEventListener('load', async () => {
     
     
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    await setupCodeEditor();
+
     setupEventListeners();
     setupPluginSwitching();
+    await setupCodeEditor();
     setupFileSystem();
     setupResizers();
     
