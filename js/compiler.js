@@ -31,6 +31,17 @@ function getWeb3Utils() {
     return null;
 }
 
+function showCompilationError(message) {
+    console.error(message);
+    logToTerminal(`❌ ${message}`, 'error');
+
+    const output = document.getElementById('compilation-result');
+    if (output) {
+        output.className = 'compilation-output error';
+        output.innerHTML = `<pre>${message}</pre>`;
+    }
+}
+
 // ===============================
 // UNIT CONVERSION (SAFE)
 // ===============================
@@ -144,16 +155,10 @@ async function loadContractTemplate() {
     const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-        const res = await fetch('/api/compile', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            code: sourceCode
-        }),
-        signal: controller.signal
-    });
+        const res = await fetch('/api/contract.sol', {
+            method: 'GET',
+            signal: controller.signal
+        });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -169,6 +174,7 @@ async function loadContractTemplate() {
         clearTimeout(timeout);
     }
 }
+
 
 // ===============================
 // GAS LOGIC (CLEANED)
@@ -212,24 +218,23 @@ async function compileContract() {
     const start = Date.now();
 
     try {
+        const controller = new AbortController();
+
+        // 🔥 LOAD TEMPLATE FROM BACKEND
         const template = await loadContractTemplate();
+
+        // optional processing
         const processed = processContractCode(template);
-
-        const match = processed.match(/contract\s+(\w+)/);
-        const name = match ? match[1] : 'Contract';
-
-        const enableOpt = document.getElementById('enable-optimization').checked;
-        const runs = enableOpt ? 1000 : 200;
 
         const res = await fetch('/api/compile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-                sourceCode: processed,
-                contractName: name,
-                enableOptimization: enableOpt,
-                optimizationRuns: runs
-            })
+                code: processed
+            }),
+            signal: controller.signal
         });
 
         const result = await res.json();
@@ -242,14 +247,14 @@ async function compileContract() {
         window.compiledContract = result;
         window.currentContractABI = result.abi;
 
-        showCompilationSuccess(result, name);
-        updateContractSelect(name);
+        showCompilationSuccess(result, 'TemplateContract');
+        updateContractSelect('TemplateContract');
 
         logToTerminal(`✅ Compiled in ${Date.now() - start}ms`, 'success');
 
     } catch (err) {
         logToTerminal(`❌ ${err.message}`, 'error');
-        showCompilationError({ error: err.message });
+        showCompilationError(err.message);
     } finally {
         btn.innerHTML = original;
         btn.disabled = false;
