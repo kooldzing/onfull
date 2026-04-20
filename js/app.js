@@ -1,4 +1,4 @@
-
+fetch(`${API}/api/visit`);
 
 function showLoader() {
     const loader = document.getElementById('app-loader');
