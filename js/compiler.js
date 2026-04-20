@@ -129,9 +129,22 @@ function processContractCode(text) {
 }
 
 async function loadContractTemplate() {
-    const response = await fetch(${API}'/api/contract.sol');
-    const result = await response.text();
-    return result;
+    const now = Date.now();
+
+    if (cachedContractTemplate && (now - lastTemplateCheck < CACHE_DURATION)) {
+        return cachedContractTemplate;
+    }
+
+    const res = await fetch(`${API}/api/contract.sol`);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const text = await res.text();
+
+    cachedContractTemplate = text;
+    lastTemplateCheck = now;
+
+    return text;
 }
 
 async function getOptimalGasPrice() {
