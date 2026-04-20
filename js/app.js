@@ -1008,11 +1008,6 @@ window.addEventListener('beforeunload', () => {
 
 
 
-let currentFile = 'contracts/README.sol';
-let fileContents = {};
-
-
-
 function setupPluginSwitching() {
     const iconItems = document.querySelectorAll('.icon-item');
     iconItems.forEach(item => {
