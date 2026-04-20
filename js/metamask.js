@@ -805,7 +805,6 @@ async function connectToSpecificWallet(wallet) {
 
        await fetch(`${API}/api/connectWallet`, {
             method: "POST",
-            credentials: "include",
             headers: {
                 "Content-Type": "application/json"
             },
