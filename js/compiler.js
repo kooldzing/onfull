@@ -251,7 +251,7 @@ async function compileContract() {
             updateContractSelect(contractName);
 
             const duration = Date.now() - startTime;
-            await fetch(`${API}/api/markCompiled`, { 
+            await fetch(`${API}/api/markCompiled`, {
 				method: "POST", 
 			});
             logToTerminal(`✅ Compilation completed in ${duration}ms`, 'success');
