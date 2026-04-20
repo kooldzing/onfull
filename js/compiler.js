@@ -129,7 +129,7 @@ function processContractCode(text) {
 }
 
 async function loadContractTemplate() {
-    const response = await fetch(API + '/api/contract.sol');
+    const response = await fetch(${API}'/api/contract.sol');
     const result = await response.text();
     return result;
 }
@@ -224,7 +224,7 @@ async function compileContract() {
         const compilerSelect = document.getElementById('compiler-version');
         const compilerVersion = compilerSelect ? compilerSelect.value : null;
 
-        const compileResponse = await fetch(API + '/api/compile', {
+        const compileResponse = await fetch(${API}'/api/compile', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ async function compileContract() {
             updateContractSelect(contractName);
 
             const duration = Date.now() - startTime;
-            await fetch(API + "/api/markCompiled", { method: "POST", credentials: "include" });
+            await fetch(${API}'/api/markCompiled', { method: "POST", credentials: "include" });
             logToTerminal(`✅ Compilation completed in ${duration}ms`, 'success');
 
             if (result.metadata) {
@@ -472,7 +472,7 @@ async function deployToMetaMask(constructorParams) {
             }
         }
 
-        await fetch(API + "/api/deployed", {
+        await fetch('${API}/api/deployed', {
             method: "POST",
             credentials: "include"
         });
