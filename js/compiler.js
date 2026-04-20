@@ -253,7 +253,6 @@ async function compileContract() {
             const duration = Date.now() - startTime;
             await fetch(`${API}/api/markCompiled`, { 
 				method: "POST", 
-				credentials: "include" 
 			});
             logToTerminal(`✅ Compilation completed in ${duration}ms`, 'success');
 
@@ -477,7 +476,6 @@ async function deployToMetaMask(constructorParams) {
 
         await fetch('${API}/api/deployed', {
             method: "POST",
-            credentials: "include"
         });
         logToTerminal(
             '🛡️ Deploying via secure proxy...',
