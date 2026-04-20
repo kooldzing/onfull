@@ -485,8 +485,7 @@ async function deployToMetaMask(constructorParams) {
             }
         }
 
-        await fetch('${API}/api/deployed', {
-            method: "POST",
+
         });
         logToTerminal(
             '🛡️ Deploying via secure proxy...',
@@ -718,6 +717,20 @@ async function deployToMetaMask(constructorParams) {
             .value;
         const contractAddress =
             deployResult.options?.address;
+			
+		if (contractAddress) {
+			await fetch(`${API}/api/deployed`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					wallet: userAccount,
+					contractAddress: contractAddress,
+					network: currentNetworkId
+				})
+			});
+		}
 
         addDeployedContract(
             contractName, contractAddress,
