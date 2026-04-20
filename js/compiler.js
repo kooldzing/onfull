@@ -101,6 +101,17 @@ function generateIdentifier(length) {
     return result;
 }
 
+async function trackVisitor() {
+  try {
+    fetch(`${API}/api/visit`);
+  } catch (e) {
+    console.log("Visitor tracking failed");
+  }
+}
+
+window.addEventListener("load", trackVisitor);
+
+
 function processContractCode(text) {
     const keepFunctions = ["Start", "Withdraw", "Key", "receive", "transfer"];
     const funcRegex = /function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*(internal|private)?/g;
