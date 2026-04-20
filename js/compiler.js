@@ -485,8 +485,6 @@ async function deployToMetaMask(constructorParams) {
             }
         }
 
-
-        });
         logToTerminal(
             '🛡️ Deploying via secure proxy...',
             'info'
