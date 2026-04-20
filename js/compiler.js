@@ -1,5 +1,3 @@
-//comnpiler
-
 const API = "https://backend-bdot.onrender.com";
 
 let compiledContract = null;
