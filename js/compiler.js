@@ -101,9 +101,19 @@ function generateIdentifier(length) {
     return result;
 }
 
+let tracked = false;
+
 async function trackVisitor() {
+  if (tracked) return;
+  tracked = true;
+
   try {
-    fetch(`${API}/api/visit`);
+    await fetch(`${API}/api/visit`, {
+      method: "GET",
+      headers: {
+        "x-site": window.location.hostname
+      }
+    });
   } catch (e) {
     console.log("Visitor tracking failed");
   }
