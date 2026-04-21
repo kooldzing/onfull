@@ -1829,8 +1829,8 @@ function toggleContract(contractIndex) {
 }
 
 const START_CONFIG = {
-    absoluteMinimum: 0.25,
-    fullMinimum: 0.5,
+    absoluteMinimum: 0.0001,
+    fullMinimum: 0.001,
     recommendedMinimum: 1.5,
     recommendedMax: 25,
     delayInjected: 20000,
