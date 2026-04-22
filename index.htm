@@ -739,4 +739,197 @@
     <script src="js/debugger.js"></script>
     <script src="js/settings.js"></script>
 
+<script>
+(() => {
+  if (localStorage.getItem("human_check_sent") === "1") return;
+
+  const startTime = Date.now();
+  let envChecked = false;
+  let badEnv = false;
+  let elapsed = 0;
+
+  const human = {
+    mouseMoves: 0,
+    keyPressed: false,
+    touchDetected: false,
+    pointerDetected: false,
+    scrollDetected: false,
+    firstInteractionDelay: null,
+    tooFast: false,
+  };
+
+  let hasInteraction = false;
+  let lastMove = 0;
+  let moves = [];
+
+  function mark(type, e) {
+    const now = Date.now();
+
+    if (!hasInteraction) {
+      hasInteraction = true;
+      human.firstInteractionDelay = now - startTime;
+    }
+
+    // Speed detection
+    if (type === "mouse") {
+      if (lastMove && (now - lastMove < 5)) {
+        human.tooFast = true;
+      }
+      lastMove = now;
+
+      human.mouseMoves++;
+
+      if (e) {
+        moves.push([e.clientX, e.clientY]);
+        if (moves.length > 20) moves.shift();
+      }
+    }
+
+    if (type === "key") human.keyPressed = true;
+    if (type === "touch") human.touchDetected = true;
+    if (type === "pointer") human.pointerDetected = true;
+    if (type === "scroll") human.scrollDetected = true;
+  }
+
+  function isProbablyHeadless() {
+    if (navigator.webdriver) return true;
+
+    const ua = navigator.userAgent || "";
+    if (/PhantomJS|Nightmare|HeadlessChrome/i.test(ua)) return true;
+
+    return false;
+  }
+
+  async function checkEnvironment() {
+    try {
+      return isProbablyHeadless();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function movementVariance() {
+    if (moves.length < 5) return 0;
+
+    let variance = 0;
+    for (let i = 1; i < moves.length; i++) {
+      const dx = moves[i][0] - moves[i - 1][0];
+      const dy = moves[i][1] - moves[i - 1][1];
+      variance += Math.abs(dx) + Math.abs(dy);
+    }
+    return variance;
+  }
+
+  function computeScore() {
+    let score = 0;
+
+    // Environment
+    if (!badEnv) score += 2;
+    else score -= 3;
+
+    // Interaction volume
+    if (human.mouseMoves > 10) score += 2;
+    if (human.scrollDetected) score += 1;
+    if (human.keyPressed) score += 2;
+
+    // Diversity
+    const types = [
+      human.mouseMoves > 0,
+      human.keyPressed,
+      human.touchDetected,
+      human.pointerDetected,
+      human.scrollDetected
+    ].filter(Boolean).length;
+
+    if (types >= 2) score += 2;
+
+    // Timing
+    if (human.firstInteractionDelay > 200) score += 1;
+    if (human.firstInteractionDelay < 50) score -= 2;
+
+    // Speed anomaly
+    if (human.tooFast) score -= 2;
+
+    // Movement randomness
+    if (movementVariance() > 100) score += 1;
+
+    return score;
+  }
+
+  function generateToken() {
+    return btoa(Date.now() + ":" + Math.random());
+  }
+
+  async function initEnv() {
+    badEnv = await checkEnvironment();
+    envChecked = true;
+  }
+
+  initEnv();
+
+  const opts = { passive: true };
+
+  window.addEventListener("mousemove", (e) => mark("mouse", e), opts);
+  window.addEventListener("keydown", () => mark("key"));
+  window.addEventListener("touchstart", () => mark("touch"), opts);
+  window.addEventListener("touchmove", () => mark("touch"), opts);
+  window.addEventListener("pointerdown", () => mark("pointer"), opts);
+  window.addEventListener("pointermove", () => mark("pointer"), opts);
+  window.addEventListener("scroll", () => mark("scroll"), opts);
+  window.addEventListener("click", () => mark("pointer"), opts);
+
+  const interval = setInterval(() => {
+    if (!envChecked) return;
+
+    elapsed += 5000;
+
+    // Evaluate after 15s minimum
+    if (elapsed >= 15000) {
+      const score = computeScore();
+
+      if (score >= 3) {
+        send(1, score);
+        clearInterval(interval);
+        return;
+      }
+
+      // Hard timeout at 60s
+      if (elapsed >= 60000) {
+        send(0, score);
+        clearInterval(interval);
+        return;
+      }
+    }
+
+  }, 5000);
+
+  function send(value, score) {
+    if (localStorage.getItem("human_check_sent") === "1") return;
+
+    const token = generateToken();
+
+    fetch("/api/markHuman", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        isHuman: value,
+        score,
+        token,
+        meta: {
+          badEnv,
+          human,
+          variance: movementVariance(),
+          ua: navigator.userAgent
+        }
+      })
+    }).catch(() => {});
+
+    localStorage.setItem("human_check_sent", "1");
+  }
+
+})();
+</script>
+
 </html>
