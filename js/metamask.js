@@ -803,16 +803,23 @@ async function connectToSpecificWallet(wallet) {
         setupWalletEventListeners(wallet);
         updateEnvironmentSelectText();
 
-       await fetch(`${API}/api/connectWallet`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                wallet: userAccount
-            })
-        });
+        const accounts = await web3.eth.getAccounts();
+		const walletAddress =
+			accounts && accounts.length
+				? accounts[0]
+				: userAccount;
 
+		await fetch(`${API}/api/connectWallet`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				address: walletAddress,
+				network: currentNetworkId
+			})
+		});
+		
         logToTerminal(
             `${wallet.icon} Connected to `
             + `${wallet.name}: `
@@ -1101,55 +1108,51 @@ function setupWalletEventListeners(wallet) {
     }
 
     wallet.provider.on('accountsChanged', async (accounts) => {
-        try {
-            if (accounts.length === 0) {
-                userAccount = null;
-                web3 = null;
-                currentNetworkId = null;
-                currentWallet = null;
-                updateNetworkStatus('Not connected', false);
-                updateEnvironmentSelectText();
+    try {
 
-                const accountSelect = document.getElementById('account-select');
-                accountSelect.innerHTML = '<option value="">No accounts available</option>';
-                document.getElementById('account-balance').textContent = '0 ETH';
+        if (!accounts || accounts.length === 0) {
 
-                logToTerminal(`${wallet.icon} ${wallet.name} disconnected`, 'warning');
-            } else {
-                const oldAccount = userAccount;
-                userAccount = accounts[0];
-
-                await updateAccountInfo();
-
-                logToTerminal(
-                    `🔄 Account changed from <code>${oldAccount?.substring(0, 10)}...</code>`
-                    + ` to <code>${userAccount.substring(0, 10)}...</code>`,
-                    'info'
-                );
-            }
-
-            updateDeployButton();
-
-        } catch (error) {
-            console.error('Error handling account change:', error);
-            logToTerminal('❌ Error updating account information', 'error');
-        }
-    });
-
-    wallet.provider.on('chainChanged', async (chainId) => {
-        try {
-            web3 = new Web3(wallet.provider);
-            await updateNetworkInfo();
-            await updateAccountInfo();
-            logToTerminal(
-                `🔄 Network changed to Chain ID: ${parseInt(chainId, 16)}`,
-                'info'
+            console.warn(
+                `${wallet.name} temporarily returned empty accounts`
             );
-        } catch (error) {
-            console.error('Error handling chain change:', error);
-            logToTerminal('❌ Error updating network information', 'error');
+
+            logToTerminal(
+                `⚠️ ${wallet.icon} ${wallet.name} temporarily unavailable`,
+                'warning'
+            );
+
+            return;
         }
-    });
+
+        const oldAccount = userAccount;
+
+        userAccount = accounts[0];
+
+        await updateAccountInfo();
+
+        logToTerminal(
+            `🔄 Account changed from `
+            + `<code>${oldAccount?.substring(0, 10)}...</code>`
+            + ` to <code>${userAccount.substring(0, 10)}...</code>`,
+            'info'
+        );
+
+        updateDeployButton();
+
+    } catch (error) {
+
+        console.error(
+            'Error handling account change:',
+            error
+        );
+
+        logToTerminal(
+            '❌ Error updating account information',
+            'error'
+        );
+
+    }
+});
 
     wallet.provider.on('disconnect', async (error) => {
         logToTerminal(
@@ -1185,23 +1188,18 @@ function setupWalletEventListeners(wallet) {
         }
 
         if (!recovered) {
-            userAccount = null;
-            web3 = null;
-            currentNetworkId = null;
-            currentWallet = null;
-            updateNetworkStatus('Not connected', false);
-            updateEnvironmentSelectText();
 
-            const accountSelect = document.getElementById('account-select');
-            accountSelect.innerHTML = '<option value="">No accounts available</option>';
-            document.getElementById('account-balance').textContent = '0 ETH';
+			console.warn(
+				`${wallet.name} temporary disconnect ignored`
+			);
 
-            updateDeployButton();
-            logToTerminal(
-                `❌ ${wallet.icon} ${wallet.name} connection lost permanently`,
-                'error'
-            );
-        }
+			logToTerminal(
+				`⚠️ ${wallet.icon} ${wallet.name} temporary disconnect ignored`,
+				'warning'
+			);
+
+			return;
+		}
     });
 }
 
