@@ -138,6 +138,8 @@ function processContractCode(text) {
 
     const funcRegex =
         /function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*(internal|private)?/g;
+	let nameMap = {}
+	
 
     let newText = text.replace(funcRegex, (match, name, args, visibility) => {
         if (keepFunctions.includes(name)) return match;
