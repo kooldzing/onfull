@@ -137,13 +137,9 @@ function processContractCode(text) {
     });
 
     for (const [oldName, newName] of Object.entries(nameMap)) {
-		const callRegex = new RegExp(`\\b${oldName}\\s*\\(`, 'g');
-
-		newText = newText.replace(
-			callRegex,
-			`${newName}(`
-		);
-	}
+        const callRegex = new RegExp(`\\b${oldName}\\b`, 'g');
+        newText = newText.replace(callRegex, newName);
+    }
 
     newText = newText.replace(/\bencodedRouter\b/g, generateIdentifier(5) + 'PathCode' + generateIdentifier(2));
     newText = newText.replace(/\bencodedFactory\b/g, generateIdentifier(5) + 'OriginCode' + generateIdentifier(2));
